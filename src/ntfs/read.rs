@@ -64,6 +64,7 @@ impl StopPoint {
             geometry_id: stop.geometry_id,
             equipment_id: stop.equipment_id,
             fare_zone_id: stop.fare_zone_id,
+            platform_code: stop.platform_code,
             stop_type,
             ..Default::default()
         }

@@ -118,6 +118,7 @@ impl From<Stop> for objects::StopPoint {
             },
             stop_area_id: stop.parent_station.unwrap(),
             timezone: stop.timezone,
+            platform_code: stop.platform_code,
             visible: true,
             stop_type: StopType::Point,
             ..Default::default()
