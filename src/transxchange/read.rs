@@ -270,6 +270,24 @@ fn generate_calendar_dates(
     unimplemented!()
 }
 
+<<<<<<< HEAD
+=======
+// Get Wait or Run time from ISO 8601 duration
+fn get_duration_time<'a>(element: Result<&'a Element>) -> Time {
+    if let Ok(e) = element {
+        let duration_iso8601: &str = &e.text();
+        let duration_time: std::time::Duration =
+            time_parse::duration::parse_nom(duration_iso8601).unwrap();
+        let duration_seconds = chrono::Duration::from_std(duration_time)
+            .unwrap()
+            .num_seconds() as u32;
+        Time::new(0, 0, duration_seconds)
+    } else {
+        Time::new(0, 0, 0)
+    }
+}
+
+>>>>>>> Load routes from TransXChange
 fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
     let operating_profile = vehicle_journey
         .try_only_child("OperatingProfile")
@@ -284,6 +302,7 @@ fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> R
 }
 
 fn calculate_stop_times(
+<<<<<<< HEAD
     _journey_pattern_section: &Element,
     _departure_time: &Time,
 ) -> Result<Vec<StopTime>> {
@@ -291,6 +310,76 @@ fn calculate_stop_times(
 }
 
 fn create_stop_times(transxchange: &Element, vehicle_journey: &Element) -> Result<Vec<StopTime>> {
+=======
+    stop_points: &CollectionWithId<StopPoint>,
+    journey_pattern_section: &Element,
+    first_departure_time: &Time,
+) -> Result<Vec<StopTime>> {
+    let mut stop_times = vec![];
+    let mut next_arrival_time = *first_departure_time;
+
+    for (i, journey_pattern_timing_link) in journey_pattern_section.children().enumerate() {
+        let stop_point = journey_pattern_timing_link.try_only_child("From")?;
+        let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
+        let stop_point_idx = stop_points
+            .get_idx(&stop_point_ref)
+            .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
+        let stop_point_wait_from: Time = get_duration_time(stop_point.try_only_child("WaitTime"));
+        let stop_point_wait_to: Time = get_duration_time(
+            journey_pattern_timing_link
+                .try_only_child("To")?
+                .try_only_child("WaitTime"),
+        );
+        let run_time: Time =
+            get_duration_time(journey_pattern_timing_link.try_only_child("RunTime"));
+        let arrival_time = next_arrival_time;
+        let departure_time = arrival_time + stop_point_wait_from;
+        next_arrival_time = departure_time + run_time + stop_point_wait_to;
+
+        stop_times.push(StopTime {
+            stop_point_idx,
+            sequence: i as u32 + 1, // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
+            arrival_time,
+            departure_time,
+            boarding_duration: 0,
+            alighting_duration: 0,
+            pickup_type: 0,
+            drop_off_type: 1,
+            datetime_estimated: false,
+            local_zone_id: None,
+        });
+
+        // Last stoptime
+        if i == journey_pattern_section.children().count() - 1 {
+            let stop_point = journey_pattern_timing_link.try_only_child("To")?;
+            let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
+            let stop_point_idx = stop_points
+                .get_idx(&stop_point_ref)
+                .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
+
+            stop_times.push(StopTime {
+                stop_point_idx,
+                sequence: i as u32 + 2, // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
+                arrival_time: next_arrival_time,
+                departure_time: next_arrival_time,
+                boarding_duration: 0,
+                alighting_duration: 0,
+                pickup_type: 0,
+                drop_off_type: 1,
+                datetime_estimated: false,
+                local_zone_id: None,
+            });
+        }
+    }
+    Ok(stop_times)
+}
+
+fn create_stop_times(
+    stop_points: &CollectionWithId<StopPoint>,
+    transxchange: &Element,
+    vehicle_journey: &Element,
+) -> Result<Vec<StopTime>> {
+>>>>>>> Load routes from TransXChange
     let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
     let journey_pattern = get_by_reference(
         transxchange
@@ -312,10 +401,18 @@ fn create_stop_times(transxchange: &Element, vehicle_journey: &Element) -> Resul
         .try_only_child("DepartureTime")?
         .text()
         .parse()?;
+<<<<<<< HEAD
     calculate_stop_times(&journey_pattern_section, &departure_time)
 }
 
 fn load_routes_vehicle_journeys_calendars(
+=======
+    calculate_stop_times(&stop_points, &journey_pattern_section, &departure_time)
+}
+
+fn load_routes_vehicle_journeys_calendars(
+    collections: &Collections,
+>>>>>>> Load routes from TransXChange
     transxchange: &Element,
     dataset_id: &str,
     physical_mode_id: &str,
@@ -327,6 +424,7 @@ fn load_routes_vehicle_journeys_calendars(
     let mut routes = CollectionWithId::default();
     let mut vehicle_journeys = CollectionWithId::default();
     let mut calendars = CollectionWithId::default();
+<<<<<<< HEAD
     for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
         let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
         let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
@@ -336,6 +434,25 @@ fn load_routes_vehicle_journeys_calendars(
         let physical_mode_id = physical_mode_id.to_string();
         let dataset_id = dataset_id.to_string();
         let stop_times = create_stop_times(transxchange, vehicle_journey)?;
+=======
+
+    for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
+        let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
+        let line_ref = vehicle_journey.try_only_child("LineRef")?.text();
+        let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
+        let id = format!("{}:{}:{}", service_ref, line_ref, vehicle_journey_code);
+        let calendar = create_calendar_dates(transxchange, vehicle_journey)?;
+        let service_id = calendar.id.clone();
+        let stop_times =
+            match create_stop_times(&collections.stop_points, transxchange, vehicle_journey) {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("{} / vehiclejourney {} skipped", e, id);
+                    continue;
+                }
+            };
+
+>>>>>>> Load routes from TransXChange
         let operator_ref = vehicle_journey.try_only_child("OperatorRef")?.text();
         let operator = get_by_reference(
             transxchange.try_only_child("Operators")?,
@@ -349,15 +466,24 @@ fn load_routes_vehicle_journeys_calendars(
         let headsign = None;
 
         // Insert only at the last moment
+<<<<<<< HEAD
         calendars.push(calendar)?;
+=======
+        //calendars.push(calendar)?;
+>>>>>>> Load routes from TransXChange
         // Ignore duplicate insert (it means the route has already been created)
         let _ = routes.push(route);
         vehicle_journeys.push(VehicleJourney {
             id,
             stop_times,
             route_id,
+<<<<<<< HEAD
             physical_mode_id,
             dataset_id,
+=======
+            physical_mode_id: physical_mode_id.to_string(),
+            dataset_id: dataset_id.to_string(),
+>>>>>>> Load routes from TransXChange
             service_id,
             company_id,
             headsign,
@@ -372,8 +498,17 @@ fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &
     let companies = load_companies(transxchange)?;
     let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
     let lines = load_lines(transxchange, &network.id, &commercial_mode.id)?;
+<<<<<<< HEAD
     let (routes, vehicle_journeys, calendars) =
         load_routes_vehicle_journeys_calendars(transxchange, dataset_id, &physical_mode.id)?;
+=======
+    let (routes, vehicle_journeys, calendars) = load_routes_vehicle_journeys_calendars(
+        collections,
+        transxchange,
+        dataset_id,
+        &physical_mode.id,
+    )?;
+>>>>>>> Load routes from TransXChange
 
     // Insert in collections
     collections.datasets =
