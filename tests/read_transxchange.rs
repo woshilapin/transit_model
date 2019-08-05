@@ -42,6 +42,7 @@ fn test_read_transxchange() {
                 "lines.txt",
                 "networks.txt",
                 "physical_modes.txt",
+                "routes.txt",
                 "stops.txt",
             ]),
             "fixtures/transxchange2ntfs/output/ntfs",

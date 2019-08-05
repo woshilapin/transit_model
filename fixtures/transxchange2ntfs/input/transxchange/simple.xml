@@ -38,6 +38,15 @@
       <StandardService>
         <Origin>Pontypool Town Hall</Origin>
         <Destination>Pontypool College</Destination>
+        <JourneyPattern id="JP1">
+          <Direction>outbound</Direction>
+        </JourneyPattern>
+        <JourneyPattern id="JP2">
+          <Direction>clockwise</Direction>
+        </JourneyPattern>
+        <JourneyPattern id="JP3">
+          <Direction>circular</Direction>
+        </JourneyPattern>
       </StandardService>
     </Service>
   </Services>

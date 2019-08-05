@@ -1,0 +1,3 @@
+route_id,route_name,direction_type,line_id,geometry_id,destination_id
+prefix:SCAO812:outbound,Undefined,outbound,prefix:SCAO812,,
+prefix:SCAO812:clockwise,Undefined,clockwise,prefix:SCAO812,,

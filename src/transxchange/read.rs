@@ -26,7 +26,6 @@ use chrono::{
     naive::{MAX_DATE, MIN_DATE},
     Duration,
 };
-use failure::format_err;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
@@ -52,6 +51,16 @@ lazy_static! {
         modes_map.insert("trolleyBus", "Shuttle");
         modes_map
     };
+}
+
+fn get_by_reference<'a>(
+    element: &'a Element,
+    child_name: &str,
+    reference: &str,
+) -> Result<&'a Element> {
+    element.try_only_child_with_filter(child_name, |e| {
+        e.attr("id").filter(|id| *id == reference).is_some()
+    })
 }
 
 fn get_service_validity_period(transxchange: &Element) -> Result<ValidityPeriod> {
@@ -121,32 +130,17 @@ fn update_validity_period_from_transxchange(
     CollectionWithId::new(datasets)
 }
 
-fn get_operator<'a>(transxchange: &'a Element, operator_ref: &str) -> Result<&'a Element> {
-    let is_operator_ref = |operator: &&Element| {
-        operator
-            .attr("id")
-            .filter(|id| *id == operator_ref)
-            .is_some()
-    };
-    transxchange
-        .try_only_child("Operators")?
-        .children()
-        .find(is_operator_ref)
-        .ok_or_else(|| {
-            format_err!(
-                "Failed to find the operator for reference '{}'",
-                operator_ref
-            )
-        })
-}
-
 fn load_network(transxchange: &Element) -> Result<Network> {
     let operator_ref = transxchange
         .try_only_child("Services")?
         .try_only_child("Service")?
         .try_only_child("RegisteredOperatorRef")?
         .text();
-    let operator = get_operator(transxchange, &operator_ref)?;
+    let operator = get_by_reference(
+        transxchange.try_only_child("Operators")?,
+        "Operator",
+        &operator_ref,
+    )?;
     let id = operator.try_only_child("OperatorCode")?.text();
     let name = operator
         .try_only_child("TradingName")
@@ -265,11 +259,121 @@ fn load_lines(
     Ok(lines)
 }
 
-fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()> {
+fn create_route(_transxchange: &Element, _vehicle_journey: &Element) -> Result<Route> {
+    unimplemented!()
+}
+
+fn generate_calendar_dates(
+    _operating_profile: &Element,
+    _validity_period: ValidityPeriod,
+) -> Result<Calendar> {
+    unimplemented!()
+}
+
+fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
+    let operating_profile = vehicle_journey
+        .try_only_child("OperatingProfile")
+        .or_else(|_| {
+            transxchange
+                .try_only_child("Services")?
+                .try_only_child("Service")?
+                .try_only_child("OperatingProfile")
+        })?;
+    let validity_period = get_service_validity_period(transxchange)?;
+    generate_calendar_dates(&operating_profile, validity_period)
+}
+
+fn calculate_stop_times(
+    _journey_pattern_section: &Element,
+    _departure_time: &Time,
+) -> Result<Vec<StopTime>> {
+    unimplemented!()
+}
+
+fn create_stop_times(transxchange: &Element, vehicle_journey: &Element) -> Result<Vec<StopTime>> {
+    let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
+    let journey_pattern = get_by_reference(
+        transxchange
+            .try_only_child("Services")?
+            .try_only_child("Service")?
+            .try_only_child("StandardService")?,
+        "JourneyPattern",
+        &journey_pattern_ref,
+    )?;
+    let journey_pattern_section_ref = journey_pattern
+        .try_only_child("JourneyPatternSectionRefs")?
+        .text();
+    let journey_pattern_section = get_by_reference(
+        transxchange.try_only_child("JourneyPatternSections")?,
+        "JourneyPatternSection",
+        &journey_pattern_section_ref,
+    )?;
+    let departure_time: Time = vehicle_journey
+        .try_only_child("DepartureTime")?
+        .text()
+        .parse()?;
+    calculate_stop_times(&journey_pattern_section, &departure_time)
+}
+
+fn load_routes_vehicle_journeys_calendars(
+    transxchange: &Element,
+    dataset_id: &str,
+    physical_mode_id: &str,
+) -> Result<(
+    CollectionWithId<Route>,
+    CollectionWithId<VehicleJourney>,
+    CollectionWithId<Calendar>,
+)> {
+    let mut routes = CollectionWithId::default();
+    let mut vehicle_journeys = CollectionWithId::default();
+    let mut calendars = CollectionWithId::default();
+    for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
+        let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
+        let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
+        let id = format!("{}:{}", service_ref, vehicle_journey_code);
+        let calendar = create_calendar_dates(transxchange, vehicle_journey)?;
+        let service_id = calendar.id.clone();
+        let physical_mode_id = physical_mode_id.to_string();
+        let dataset_id = dataset_id.to_string();
+        let stop_times = create_stop_times(transxchange, vehicle_journey)?;
+        let operator_ref = vehicle_journey.try_only_child("OperatorRef")?.text();
+        let operator = get_by_reference(
+            transxchange.try_only_child("Operators")?,
+            "Operator",
+            &operator_ref,
+        )?;
+        let company_id = operator.try_only_child("OperatorCode")?.text();
+        let route = create_route(transxchange, vehicle_journey)?;
+        let route_id = route.id.clone();
+        // TODO: Fill up the headsign
+        let headsign = None;
+
+        // Insert only at the last moment
+        calendars.push(calendar)?;
+        // Ignore duplicate insert (it means the route has already been created)
+        let _ = routes.push(route);
+        vehicle_journeys.push(VehicleJourney {
+            id,
+            stop_times,
+            route_id,
+            physical_mode_id,
+            dataset_id,
+            service_id,
+            company_id,
+            headsign,
+            ..Default::default()
+        })?;
+    }
+    Ok((routes, vehicle_journeys, calendars))
+}
+
+fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &str) -> Result<()> {
     let network = load_network(transxchange)?;
     let companies = load_companies(transxchange)?;
     let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
     let lines = load_lines(transxchange, &network.id, &commercial_mode.id)?;
+    let (routes, vehicle_journeys, calendars) =
+        load_routes_vehicle_journeys_calendars(transxchange, dataset_id, &physical_mode.id)?;
 
     // Insert in collections
     collections.datasets =
@@ -280,10 +384,18 @@ fn read_xml(transxchange: &Element, collections: &mut Collections) -> Result<()>
     let _ = collections.commercial_modes.push(commercial_mode);
     let _ = collections.physical_modes.push(physical_mode);
     collections.lines.merge(lines);
+    collections.routes.try_merge(routes)?;
+    collections.vehicle_journeys.try_merge(vehicle_journeys)?;
+    collections.calendars.try_merge(calendars)?;
     Ok(())
 }
 
-fn read_file<F>(file_path: &Path, mut file: F, collections: &mut Collections) -> Result<()>
+fn read_file<F>(
+    file_path: &Path,
+    mut file: F,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     F: Read,
 {
@@ -293,7 +405,7 @@ where
             let mut file_content = String::new();
             file.read_to_string(&mut file_content)?;
             match file_content.parse::<Element>() {
-                Ok(element) => read_xml(&element, collections)?,
+                Ok(element) => read_xml(&element, collections, dataset_id)?,
                 Err(e) => {
                     warn!("Failed to parse file '{:?}' as DOM: {}", file_path, e);
                 }
@@ -304,7 +416,11 @@ where
     Ok(())
 }
 
-fn read_from_zip<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_zip<P>(
+    transxchange_path: P,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -312,12 +428,21 @@ where
     let mut zip_archive = ZipArchive::new(zip_file)?;
     for index in 0..zip_archive.len() {
         let file = zip_archive.by_index(index)?;
-        read_file(file.sanitized_name().as_path(), file, collections)?;
+        read_file(
+            file.sanitized_name().as_path(),
+            file,
+            collections,
+            dataset_id,
+        )?;
     }
     Ok(())
 }
 
-fn read_from_path<P>(transxchange_path: P, collections: &mut Collections) -> Result<()>
+fn read_from_path<P>(
+    transxchange_path: P,
+    collections: &mut Collections,
+    dataset_id: &str,
+) -> Result<()>
 where
     P: AsRef<Path>,
 {
@@ -327,7 +452,7 @@ where
         .filter(|e| e.file_type().is_file())
     {
         let file = File::open(entry.path())?;
-        read_file(entry.path(), file, collections)?;
+        read_file(entry.path(), file, collections, dataset_id)?;
     }
     Ok(())
 }
@@ -351,6 +476,7 @@ where
     let (contributor, mut dataset, feed_infos) = crate::read_utils::read_config(config_path)?;
     collections.contributors = CollectionWithId::from(contributor);
     init_dataset_validity_period(&mut dataset);
+    let dataset_id = dataset.id.clone();
     collections.datasets = CollectionWithId::from(dataset);
     collections.feed_infos = feed_infos;
     if naptan_path.as_ref().is_file() {
@@ -359,9 +485,9 @@ where
         naptan::read_from_path(naptan_path, &mut collections)?;
     };
     if transxchange_path.as_ref().is_file() {
-        read_from_zip(transxchange_path, &mut collections)?;
+        read_from_zip(transxchange_path, &mut collections, &dataset_id)?;
     } else {
-        read_from_path(transxchange_path, &mut collections)?;
+        read_from_path(transxchange_path, &mut collections, &dataset_id)?;
     };
 
     if let Some(prefix) = prefix {
@@ -574,13 +700,12 @@ mod tests {
         }
     }
 
-    mod get_operator {
+    mod get_by_reference {
         use super::*;
 
         #[test]
         fn has_operator() {
             let xml = r#"<root>
-                <Operators>
                     <Operator id="op1">
                         <OperatorCode>SOME_CODE</OperatorCode>
                         <TradingName>Some name</TradingName>
@@ -589,10 +714,9 @@ mod tests {
                         <OperatorCode>OTHER_CODE</OperatorCode>
                         <TradingName>Other name</TradingName>
                     </Operator>
-                </Operators>
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            let operator = get_operator(&root, &String::from("op1")).unwrap();
+            let operator = get_by_reference(&root, "Operator", "op1").unwrap();
             let id = operator.try_only_child("OperatorCode").unwrap().text();
             assert_eq!(id, "SOME_CODE");
             let name = operator.try_only_child("TradingName").unwrap().text();
@@ -600,22 +724,14 @@ mod tests {
         }
 
         #[test]
-        #[should_panic(expected = "Failed to find the operator for reference \\'op3\\'")]
+        #[should_panic(expected = "Failed to find a child \\'Operator\\' in element \\'root\\'")]
         fn no_operator() {
             let xml = r#"<root>
-                <Operators>
-                    <Operator id="op1">
-                        <OperatorCode>SOME_CODE</OperatorCode>
-                        <TradingName>Some name</TradingName>
-                    </Operator>
-                    <Operator id="op2">
-                        <OperatorCode>OTHER_CODE</OperatorCode>
-                        <TradingName>Other name</TradingName>
-                    </Operator>
-                </Operators>
+                <Operator id="op1" />
+                <Operator id="op2" />
             </root>"#;
             let root: Element = xml.parse().unwrap();
-            get_operator(&root, &String::from("op3")).unwrap();
+            get_by_reference(&root, "Operator", "op3").unwrap();
         }
     }
 
@@ -827,6 +943,7 @@ mod tests {
             assert_eq!(physical_mode.name, String::from("Bus"));
         }
     }
+
     mod load_lines {
         use super::*;
 
