@@ -270,8 +270,6 @@ fn generate_calendar_dates(
     unimplemented!()
 }
 
-<<<<<<< HEAD
-=======
 // Get Wait or Run time from ISO 8601 duration
 fn get_duration_time<'a>(element: Result<&'a Element>) -> Time {
     if let Ok(e) = element {
@@ -287,7 +285,6 @@ fn get_duration_time<'a>(element: Result<&'a Element>) -> Time {
     }
 }
 
->>>>>>> Load routes from TransXChange
 fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
     let operating_profile = vehicle_journey
         .try_only_child("OperatingProfile")
@@ -302,15 +299,6 @@ fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> R
 }
 
 fn calculate_stop_times(
-<<<<<<< HEAD
-    _journey_pattern_section: &Element,
-    _departure_time: &Time,
-) -> Result<Vec<StopTime>> {
-    unimplemented!()
-}
-
-fn create_stop_times(transxchange: &Element, vehicle_journey: &Element) -> Result<Vec<StopTime>> {
-=======
     stop_points: &CollectionWithId<StopPoint>,
     journey_pattern_section: &Element,
     first_departure_time: &Time,
@@ -379,7 +367,6 @@ fn create_stop_times(
     transxchange: &Element,
     vehicle_journey: &Element,
 ) -> Result<Vec<StopTime>> {
->>>>>>> Load routes from TransXChange
     let journey_pattern_ref = vehicle_journey.try_only_child("JourneyPatternRef")?.text();
     let journey_pattern = get_by_reference(
         transxchange
@@ -401,18 +388,11 @@ fn create_stop_times(
         .try_only_child("DepartureTime")?
         .text()
         .parse()?;
-<<<<<<< HEAD
-    calculate_stop_times(&journey_pattern_section, &departure_time)
-}
-
-fn load_routes_vehicle_journeys_calendars(
-=======
     calculate_stop_times(&stop_points, &journey_pattern_section, &departure_time)
 }
 
 fn load_routes_vehicle_journeys_calendars(
     collections: &Collections,
->>>>>>> Load routes from TransXChange
     transxchange: &Element,
     dataset_id: &str,
     physical_mode_id: &str,
@@ -424,17 +404,6 @@ fn load_routes_vehicle_journeys_calendars(
     let mut routes = CollectionWithId::default();
     let mut vehicle_journeys = CollectionWithId::default();
     let mut calendars = CollectionWithId::default();
-<<<<<<< HEAD
-    for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
-        let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
-        let vehicle_journey_code = vehicle_journey.try_only_child("VehicleJourneyCode")?.text();
-        let id = format!("{}:{}", service_ref, vehicle_journey_code);
-        let calendar = create_calendar_dates(transxchange, vehicle_journey)?;
-        let service_id = calendar.id.clone();
-        let physical_mode_id = physical_mode_id.to_string();
-        let dataset_id = dataset_id.to_string();
-        let stop_times = create_stop_times(transxchange, vehicle_journey)?;
-=======
 
     for vehicle_journey in transxchange.try_only_child("VehicleJourneys")?.children() {
         let service_ref = vehicle_journey.try_only_child("ServiceRef")?.text();
@@ -452,7 +421,6 @@ fn load_routes_vehicle_journeys_calendars(
                 }
             };
 
->>>>>>> Load routes from TransXChange
         let operator_ref = vehicle_journey.try_only_child("OperatorRef")?.text();
         let operator = get_by_reference(
             transxchange.try_only_child("Operators")?,
@@ -466,24 +434,15 @@ fn load_routes_vehicle_journeys_calendars(
         let headsign = None;
 
         // Insert only at the last moment
-<<<<<<< HEAD
         calendars.push(calendar)?;
-=======
-        //calendars.push(calendar)?;
->>>>>>> Load routes from TransXChange
         // Ignore duplicate insert (it means the route has already been created)
         let _ = routes.push(route);
         vehicle_journeys.push(VehicleJourney {
             id,
             stop_times,
             route_id,
-<<<<<<< HEAD
-            physical_mode_id,
-            dataset_id,
-=======
             physical_mode_id: physical_mode_id.to_string(),
             dataset_id: dataset_id.to_string(),
->>>>>>> Load routes from TransXChange
             service_id,
             company_id,
             headsign,
@@ -498,17 +457,12 @@ fn read_xml(transxchange: &Element, collections: &mut Collections, dataset_id: &
     let companies = load_companies(transxchange)?;
     let (commercial_mode, physical_mode) = load_commercial_physical_modes(transxchange)?;
     let lines = load_lines(transxchange, &network.id, &commercial_mode.id)?;
-<<<<<<< HEAD
-    let (routes, vehicle_journeys, calendars) =
-        load_routes_vehicle_journeys_calendars(transxchange, dataset_id, &physical_mode.id)?;
-=======
     let (routes, vehicle_journeys, calendars) = load_routes_vehicle_journeys_calendars(
         collections,
         transxchange,
         dataset_id,
         &physical_mode.id,
     )?;
->>>>>>> Load routes from TransXChange
 
     // Insert in collections
     collections.datasets =
