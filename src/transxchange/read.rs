@@ -26,6 +26,7 @@ use chrono::{
     naive::{MAX_DATE, MIN_DATE},
     Duration,
 };
+use failure::format_err;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
@@ -305,6 +306,7 @@ fn calculate_stop_times(
 ) -> Result<Vec<StopTime>> {
     let mut stop_times = vec![];
     let mut next_arrival_time = *first_departure_time;
+    let mut previous_stop_point_wait_to = Time::new(0, 0, 0);
 
     for (i, journey_pattern_timing_link) in journey_pattern_section.children().enumerate() {
         let stop_point = journey_pattern_timing_link.try_only_child("From")?;
@@ -313,16 +315,16 @@ fn calculate_stop_times(
             .get_idx(&stop_point_ref)
             .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
         let stop_point_wait_from: Time = get_duration_time(stop_point.try_only_child("WaitTime"));
-        let stop_point_wait_to: Time = get_duration_time(
+        let run_time: Time =
+            get_duration_time(journey_pattern_timing_link.try_only_child("RunTime"));
+        let arrival_time = next_arrival_time;
+        let departure_time = arrival_time + stop_point_wait_from + previous_stop_point_wait_to;
+        next_arrival_time = departure_time + run_time;
+        previous_stop_point_wait_to = get_duration_time(
             journey_pattern_timing_link
                 .try_only_child("To")?
                 .try_only_child("WaitTime"),
         );
-        let run_time: Time =
-            get_duration_time(journey_pattern_timing_link.try_only_child("RunTime"));
-        let arrival_time = next_arrival_time;
-        let departure_time = arrival_time + stop_point_wait_from;
-        next_arrival_time = departure_time + run_time + stop_point_wait_to;
 
         stop_times.push(StopTime {
             stop_point_idx,
