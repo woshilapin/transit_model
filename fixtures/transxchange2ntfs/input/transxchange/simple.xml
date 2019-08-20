@@ -83,6 +83,11 @@
       <VehicleJourneyCode>VJ1</VehicleJourneyCode>
       <OperatorRef>O1</OperatorRef>
       <OperatingProfile>
+        <RegularDayType>
+          <DaysOfWeek>
+            <MondayToFriday />
+          </DaysOfWeek>
+        </RegularDayType>
       </OperatingProfile>
       <JourneyPatternRef>JP1</JourneyPatternRef>
       <DepartureTime>08:45:00</DepartureTime>
