@@ -30,7 +30,7 @@ use failure::format_err;
 use lazy_static::lazy_static;
 use log::{info, warn};
 use minidom::Element;
-use std::{fs::File, io::Read, path::Path};
+use std::{convert::TryFrom, fs::File, io::Read, path::Path};
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
@@ -273,9 +273,7 @@ fn generate_calendar_dates(
 
 // Get Wait or Run time from ISO 8601 duration
 fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
-    use std::convert::TryFrom;
-    use time_parse::duration::parse_nom as parse;
-    let std_duration = parse(duration_iso8601)?;
+    let std_duration = time_parse::duration::parse_nom(duration_iso8601)?;
     let duration_seconds = Duration::from_std(std_duration)?.num_seconds();
     let time = Time::new(0, 0, u32::try_from(duration_seconds)?);
     Ok(time)
@@ -309,8 +307,9 @@ fn calculate_stop_times(
     let mut stop_times = vec![];
     let mut next_arrival_time = *first_departure_time;
     let mut stop_point_previous_wait_to = Time::default();
+    let mut sequence = 1; // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
 
-    for (i, journey_pattern_timing_link) in journey_pattern_section.children().enumerate() {
+    for journey_pattern_timing_link in journey_pattern_section.children() {
         let stop_point = journey_pattern_timing_link.try_only_child("From")?;
         let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
         let stop_point_idx = stop_points
@@ -323,7 +322,7 @@ fn calculate_stop_times(
 
         stop_times.push(StopTime {
             stop_point_idx,
-            sequence: i as u32 + 1, // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
+            sequence,
             arrival_time,
             departure_time,
             boarding_duration: 0,
@@ -339,29 +338,30 @@ fn calculate_stop_times(
             journey_pattern_timing_link.try_only_child("To")?,
             "WaitTime",
         );
-
-        // Last stoptime
-        if i == journey_pattern_section.children().count() - 1 {
-            let stop_point = journey_pattern_timing_link.try_only_child("To")?;
-            let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
-            let stop_point_idx = stop_points
-                .get_idx(&stop_point_ref)
-                .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
-
-            stop_times.push(StopTime {
-                stop_point_idx,
-                sequence: i as u32 + 2, // use loop index instead of JourneyPatternTimingLinkId (not always continuous)
-                arrival_time: next_arrival_time,
-                departure_time: next_arrival_time,
-                boarding_duration: 0,
-                alighting_duration: 0,
-                pickup_type: 0,
-                drop_off_type: 1,
-                datetime_estimated: false,
-                local_zone_id: None,
-            });
-        }
+        sequence = sequence + 1;
     }
+    let stop_point = journey_pattern_section
+        .children()
+        .last()
+        .ok_or_else(|| format_err!("Failed to find the last JourneyPatternSection"))?
+        .try_only_child("To")?;
+    let stop_point_ref = stop_point.try_only_child("StopPointRef")?.text();
+    let stop_point_idx = stop_points
+        .get_idx(&stop_point_ref)
+        .ok_or_else(|| format_err!("stop_id={} not found", stop_point_ref))?;
+
+    stop_times.push(StopTime {
+        stop_point_idx,
+        sequence,
+        arrival_time: next_arrival_time,
+        departure_time: next_arrival_time,
+        boarding_duration: 0,
+        alighting_duration: 0,
+        pickup_type: 0,
+        drop_off_type: 1,
+        datetime_estimated: false,
+        local_zone_id: None,
+    });
     Ok(stop_times)
 }
 
@@ -1133,6 +1133,150 @@ mod tests {
             assert_eq!(line.backward_direction, None);
             assert_eq!(line.network_id, String::from("SSWL"));
             assert_eq!(line.commercial_mode_id, String::from("Bus"));
+        }
+    }
+
+    mod parse_duration_in_seconds {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn parse_duration() {
+            let time = parse_duration_in_seconds("PT1H30M5S").unwrap();
+            assert_eq!(time, Time::new(1, 30, 5));
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_duration() {
+            parse_duration_in_seconds("NotAValidISO8601Duration").unwrap();
+        }
+    }
+
+    mod get_duration_from {
+        use super::*;
+
+        #[test]
+        fn get_duration() {
+            let xml = r#"<root>
+                <duration>PT30S</duration>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let time = get_duration_from(&root, "duration");
+            assert_eq!(time, Time::new(0, 0, 30));
+        }
+
+        #[test]
+        fn no_child() {
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            let time = get_duration_from(&root, "duration");
+            assert_eq!(time, Time::new(0, 0, 0));
+        }
+    }
+
+    mod calculate_stop_times {
+        use super::*;
+        use pretty_assertions::assert_eq;
+
+        #[test]
+        fn generate_stop_times() {
+            let stop_points = CollectionWithId::new(vec![
+                StopPoint {
+                    id: String::from("sp:1"),
+                    ..Default::default()
+                },
+                StopPoint {
+                    id: String::from("sp:2"),
+                    ..Default::default()
+                },
+                StopPoint {
+                    id: String::from("sp:3"),
+                    ..Default::default()
+                },
+            ])
+            .unwrap();
+            let xml = r#"<root>
+                <child>
+                    <From>
+                        <StopPointRef>sp:1</StopPointRef>
+                        <WaitTime>PT60S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:2</StopPointRef>
+                    </To>
+                    <RunTime>PT10M</RunTime>
+                </child>
+                <child>
+                    <From>
+                        <StopPointRef>sp:2</StopPointRef>
+                        <WaitTime>PT1M30S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:3</StopPointRef>
+                        <WaitTime>PT2M</WaitTime>
+                    </To>
+                    <RunTime>PT5M</RunTime>
+                </child>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let stop_times =
+                calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+            let stop_time = &stop_times[0];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:1").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 1);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 0, 0));
+            assert_eq!(stop_time.departure_time, Time::new(0, 1, 0));
+
+            let stop_time = &stop_times[1];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:2").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 2);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 11, 0));
+            assert_eq!(stop_time.departure_time, Time::new(0, 12, 30));
+
+            let stop_time = &stop_times[2];
+            assert_eq!(
+                stop_time.stop_point_idx,
+                stop_points.get_idx("sp:3").unwrap()
+            );
+            assert_eq!(stop_time.sequence, 3);
+            assert_eq!(stop_time.arrival_time, Time::new(0, 17, 30));
+            assert_eq!(stop_time.departure_time, Time::new(0, 17, 30));
+        }
+
+        #[test]
+        #[should_panic(expected = "stop_id=\\\"sp:1\\\" not found")]
+        fn stop_point_not_found() {
+            let stop_points = CollectionWithId::new(vec![]).unwrap();
+            let xml = r#"<root>
+                <child>
+                    <From>
+                        <StopPointRef>sp:1</StopPointRef>
+                        <WaitTime>PT60S</WaitTime>
+                    </From>
+                    <To>
+                        <StopPointRef>sp:2</StopPointRef>
+                    </To>
+                    <RunTime>PT10M</RunTime>
+                </child>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to find the last JourneyPatternSection")]
+        fn no_section() {
+            let stop_points = CollectionWithId::new(vec![]).unwrap();
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            calculate_stop_times(&stop_points, &root, &Time::new(0, 0, 0)).unwrap();
         }
     }
 }
