@@ -308,7 +308,7 @@ fn calculate_stop_times(
 ) -> Result<Vec<StopTime>> {
     let mut stop_times = vec![];
     let mut next_arrival_time = *first_departure_time;
-    let mut previous_stop_point_wait_to = Time::new(0, 0, 0);
+    let mut stop_point_previous_wait_to = Time::default();
 
     for (i, journey_pattern_timing_link) in journey_pattern_section.children().enumerate() {
         let stop_point = journey_pattern_timing_link.try_only_child("From")?;
@@ -319,12 +319,7 @@ fn calculate_stop_times(
         let stop_point_wait_from = get_duration_from(&stop_point, "WaitTime");
         let run_time = get_duration_from(&journey_pattern_timing_link, "RunTime");
         let arrival_time = next_arrival_time;
-        let departure_time = arrival_time + stop_point_wait_from + previous_stop_point_wait_to;
-        next_arrival_time = departure_time + run_time;
-        previous_stop_point_wait_to = get_duration_from(
-            journey_pattern_timing_link.try_only_child("To")?,
-            "WaitTime",
-        );
+        let departure_time = arrival_time + stop_point_wait_from + stop_point_previous_wait_to;
 
         stop_times.push(StopTime {
             stop_point_idx,
@@ -338,6 +333,12 @@ fn calculate_stop_times(
             datetime_estimated: false,
             local_zone_id: None,
         });
+
+        next_arrival_time = departure_time + run_time;
+        stop_point_previous_wait_to = get_duration_from(
+            journey_pattern_timing_link.try_only_child("To")?,
+            "WaitTime",
+        );
 
         // Last stoptime
         if i == journey_pattern_section.children().count() - 1 {
