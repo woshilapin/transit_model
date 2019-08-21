@@ -272,18 +272,20 @@ fn generate_calendar_dates(
 }
 
 // Get Wait or Run time from ISO 8601 duration
-fn get_duration_time<'a>(element: Result<&'a Element>) -> Time {
-    if let Ok(e) = element {
-        let duration_iso8601: &str = &e.text();
-        let duration_time: std::time::Duration =
-            time_parse::duration::parse_nom(duration_iso8601).unwrap();
-        let duration_seconds = chrono::Duration::from_std(duration_time)
-            .unwrap()
-            .num_seconds() as u32;
-        Time::new(0, 0, duration_seconds)
-    } else {
-        Time::new(0, 0, 0)
-    }
+fn parse_duration_in_seconds(duration_iso8601: &str) -> Result<Time> {
+    use std::convert::TryFrom;
+    use time_parse::duration::parse_nom as parse;
+    let std_duration = parse(duration_iso8601)?;
+    let duration_seconds = Duration::from_std(std_duration)?.num_seconds();
+    let time = Time::new(0, 0, u32::try_from(duration_seconds)?);
+    Ok(time)
+}
+fn get_duration_from(element: &Element, name: &str) -> Time {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .and_then(|s| parse_duration_in_seconds(&s))
+        .unwrap_or_default()
 }
 
 fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
@@ -314,16 +316,14 @@ fn calculate_stop_times(
         let stop_point_idx = stop_points
             .get_idx(&stop_point_ref)
             .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
-        let stop_point_wait_from: Time = get_duration_time(stop_point.try_only_child("WaitTime"));
-        let run_time: Time =
-            get_duration_time(journey_pattern_timing_link.try_only_child("RunTime"));
+        let stop_point_wait_from = get_duration_from(&stop_point, "WaitTime");
+        let run_time = get_duration_from(&journey_pattern_timing_link, "RunTime");
         let arrival_time = next_arrival_time;
         let departure_time = arrival_time + stop_point_wait_from + previous_stop_point_wait_to;
         next_arrival_time = departure_time + run_time;
-        previous_stop_point_wait_to = get_duration_time(
-            journey_pattern_timing_link
-                .try_only_child("To")?
-                .try_only_child("WaitTime"),
+        previous_stop_point_wait_to = get_duration_from(
+            journey_pattern_timing_link.try_only_child("To")?,
+            "WaitTime",
         );
 
         stop_times.push(StopTime {
