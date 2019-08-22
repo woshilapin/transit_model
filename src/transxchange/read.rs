@@ -285,7 +285,17 @@ fn get_duration_from(element: &Element, name: &str) -> Time {
         .and_then(|s| parse_duration_in_seconds(&s))
         .unwrap_or_default()
 }
-
+fn get_pickup_and_dropoff_types(element: &Element, name: &str) -> (u8, u8) {
+    element
+        .try_only_child(name)
+        .map(Element::text)
+        .map(|a| match a.as_str() {
+            "pickUp" => (0, 1),
+            "setDown" => (1, 0),
+            _ => (0, 0),
+        })
+        .unwrap_or((0, 0))
+}
 fn create_calendar_dates(transxchange: &Element, vehicle_journey: &Element) -> Result<Calendar> {
     let operating_profile = vehicle_journey
         .try_only_child("OperatingProfile")
@@ -317,6 +327,7 @@ fn calculate_stop_times(
             .ok_or_else(|| format_err!("stop_id={:?} not found", stop_point_ref))?;
         let stop_point_wait_from = get_duration_from(&stop_point, "WaitTime");
         let run_time = get_duration_from(&journey_pattern_timing_link, "RunTime");
+        let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
         let arrival_time = next_arrival_time;
         let departure_time = arrival_time + stop_point_wait_from + stop_point_previous_wait_to;
 
@@ -327,8 +338,8 @@ fn calculate_stop_times(
             departure_time,
             boarding_duration: 0,
             alighting_duration: 0,
-            pickup_type: 0,
-            drop_off_type: 1,
+            pickup_type,
+            drop_off_type,
             datetime_estimated: false,
             local_zone_id: None,
         });
@@ -349,6 +360,7 @@ fn calculate_stop_times(
     let stop_point_idx = stop_points
         .get_idx(&stop_point_ref)
         .ok_or_else(|| format_err!("stop_id={} not found", stop_point_ref))?;
+    let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&stop_point, "Activity");
 
     stop_times.push(StopTime {
         stop_point_idx,
@@ -357,8 +369,8 @@ fn calculate_stop_times(
         departure_time: next_arrival_time,
         boarding_duration: 0,
         alighting_duration: 0,
-        pickup_type: 0,
-        drop_off_type: 1,
+        pickup_type,
+        drop_off_type,
         datetime_estimated: false,
         local_zone_id: None,
     });
@@ -1172,6 +1184,52 @@ mod tests {
             let root: Element = xml.parse().unwrap();
             let time = get_duration_from(&root, "duration");
             assert_eq!(time, Time::new(0, 0, 0));
+        }
+    }
+
+    mod get_pickup_and_dropoff_types {
+        use super::*;
+
+        #[test]
+        fn get_pickup() {
+            let xml = r#"<root>
+                <activity>pickUp</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 1);
+        }
+
+        #[test]
+        fn get_setdown() {
+            let xml = r#"<root>
+                <activity>setDown</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 1);
+            assert_eq!(drop_off_type, 0);
+        }
+
+        #[test]
+        fn get_pickupandsetdown() {
+            let xml = r#"<root>
+                <activity>pickUpAndSetDown</activity>
+            </root>"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 0);
+        }
+
+        #[test]
+        fn no_child() {
+            let xml = r#"<root />"#;
+            let root: Element = xml.parse().unwrap();
+            let (pickup_type, drop_off_type) = get_pickup_and_dropoff_types(&root, "activity");
+            assert_eq!(pickup_type, 0);
+            assert_eq!(drop_off_type, 0);
         }
     }
 
