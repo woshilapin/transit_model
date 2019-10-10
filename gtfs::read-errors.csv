@@ -1,0 +1,101 @@
+filename	line_number	log_type	log_message	description
+src/read_utils.rs	138	PANIC		if file `calendar.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `calendar.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/common_format.rs	189	INFO	Skipping calendar.txt	if file `calendar.txt` is not present 
+src/common_format.rs	193	INFO	Reading calendar.txt	if file `calendar.txt` is present
+src/common_format.rs	196	PANIC		if a line of `calendar.txt` cannot be deserialized into a `Calendar` object
+src/common_format.rs	205	PANIC	<id> already found	if at least 2 `service_id` of `calendar.txt` are the same (ID conflict)
+src/read_utils.rs	138	PANIC		if file `calendar_dates.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `calendar_dates.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/common_format.rs	138	PANIC	calendar_dates.txt or calendar.txt not found	if both `calendar.txt` and `calendar_dates.txt` are not present
+src/common_format.rs	140	INFO	Skipping calendar_dates.txt	if `calendar_dates.txt` is not present
+src/common_format.rs	143	INFO	Reading calendar_dates.txt	if `calendar_dates.txt` is present
+src/common_format.rs	147	PANIC		if a line of `calendar_dates.txt` cannot be deserialized into a `CalendarDate` object
+src/read_utils.rs	57	INFO		[_Reading dataset and contributor from <config-path>_]
+src/read_utils.rs	58	PANIC		if file `config-path` cannot be opened
+src/read_utils.rs	59	PANIC		if file `config-path` cannot be deserialized properly as a `Config` object
+src/gtfs/mod.rs	255	PANIC	<id> already found	if at least 2 `contributor` have conflicting identifier
+src/gtfs/mod.rs	256	PANIC	<id> already found	if at least 2 `dataset` have conflicting identifier
+src/gtfs/read.rs	451	INFO		[_Reading agency.txt_]
+src/gtfs/read.rs	459	PANIC	<id> already found	if at least 2 `network` have conflicting identifier
+src/gtfs/read.rs	464	PANIC	<id> already found	if at least 2 `company` have conflicting identifier
+src/gtfs/read.rs	550	INFO		[_Reading stops.txt_]
+src/read_utils.rs	138	PANIC		if file `stops.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `stops.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/gtfs/read.rs	557	PANIC		if a line of `stops.txt` cannot be deserialized into a `Stop` object
+src/gtfs/read.rs	590	WARN		if the stop is of type `StopEntrance`
+src/gtfs/read.rs	593	WARN		if the stop is of type `GenericNode`
+src/gtfs/read.rs	596	WARN		if the stop is of type `BoardingArea`
+src/gtfs/read.rs	600	PANIC	<id> already found	if at least 2 `stop_point` have conflicting identifier
+src/gtfs/read.rs	601	PANIC	<id> already found	if at least 2 `stop_area` have conflicting identifier
+src/read_utils.rs	138	PANIC		if file `transfers.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `transfers.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/gtfs/read.rs	616	INFO	Skipping transfers.txt	if `transfers.txt` is not present
+src/gtfs/read.rs	620	INFO	Reading transfers.txt	if `transfers.txt` is present
+src/gtfs/read.rs	624	WARN/IGNORE	Problem reading transfers.txt: <error>	if a line of `transfers.txt` cannot be deserialized into a `Transfer` object
+src/gtfs/read.rs	630	WARN/IGNORE	Problem reading transfers.txt: from_stop_id=<id> not found	if the `from_stop_id` refer to `stop_point` that doesn't exist
+src/gtfs/read.rs	638	WARN/IGNORE	Problem reading transfers.txt: to_stop_id=<id> not found	if the `to_stop_id` refer to `stop_point` that doesn't exist
+src/gtfs/read.rs	657	WARN	The min_transfer_time between from_stop_id <from_stop_point> and to_stop_id <to_stop_point> is empty	if the minimum transfer time of the `Transfer` object is empty
+src/gtfs/read.rs	676	PANIC	<id> already found	if at least 2 `transfer` have conflicting identifier
+src/read_utils.rs	138	PANIC		if file `shapes.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `shapes.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/gtfs/read.rs	251	INFO	Skipping shapes.txt	if `transfers.txt` is not present
+src/gtfs/read.rs	255	INFO	Reading shapes.txt	if `transfers.txt` is present
+src/gtfs/read.rs	259	WARN/IGNORE		if a line of `shapes.txt` cannot be deserialized into a `Shape` object
+src/gtfs/read.rs	271	PANIC	<id> already found	if at least 2 `geometry` have conflicting identifier
+src/gtfs/read.rs	885	INFO		[_Reading routes.txt_]
+src/read_utils.rs	213	PANIC		if a line of `routes.txt` cannot be deserialized into a `Route` object
+src/gtfs/read.rs	888	PANIC	<id> already found	if at least 2 `commercial_modes` have conflicting identifier
+src/gtfs/read.rs	889	PANIC	<id> already found	if at least 2 `physical_modes` have conflicting identifier
+src/read_utils.rs	213	PANIC		if a line of `trips.txt` cannot be deserialized into a `Trip` object
+src/gtfs/read.rs	892	WARN	Couldn't find trips for route_id <route_id>	if a `route` doesn't have an associated `trip`
+src/gtfs/read.rs	727	PANIC		if there is no route
+src/gtfs/read.rs	894	PANIC	<id> already found	if at least 2 `line` have conflicting identifier
+src/gtfs/read.rs	727	PANIC		if there is no route
+src/gtfs/read.rs	897	PANIC	<id> already found	if at least 2 `route` have conflicting identifier
+src/gtfs/read.rs	834	PANIC		if there is no dataset
+src/gtfs/read.rs	218	PANIC	Coudn't find route <trip.route_id> for trip <trip.id>	if the trip refers to a route which doesn't exist
+src/gtfs/read.rs	51	PANIC	Impossible to get agency id, several networks found	if multiple networks have been found
+src/gtfs/read.rs	52	PANIC	Impossible to get agency id, no network found	if no network have been found
+src/gtfs/read.rs	906	PANIC	<id> already found	if at least 2 `vehicle_journey` have conflicting identifier
+src/gtfs/read.rs	907	PANIC	<id> already found	if at least 2 `trip_property` have conflicting identifier
+src/gtfs/read.rs	270	PANIC	<id> already found	if at least 2 `equipment` have conflicting identifier
+src/read_utils.rs	138	PANIC		if file `stop_times.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `stop_times.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/gtfs/read.rs	295	INFO		[_Reading stop_times.txt_]
+src/gtfs/read.rs	303	PANIC		if a line of `stop_times.txt` cannot be deserialized into a `StopTime` object
+src/gtfs/read.rs	304	PANIC	Problem reading stop_times.txt: trip_id=<stop_time.trip_id> not found	if a `stop_time` refers a `vehicle_journey` which doesn't exist
+src/gtfs/read.rs	403	DEBUG	for vj '<vehicle_journey_id>', stop time n° <stop_time.stop_sequence> has no arrival defined, we set it to its departure value	if `stop_time` has a departure time but no arrival time
+src/gtfs/read.rs	407	DEBUG	for vj '<vehicle_journey_id>', stop time n° <stop_time.stop_sequence> has no departure defined, we set it to its arrival value	if `stop_time` has a arrival time but no departure time
+src/gtfs/read.rs	413	IGNORE		if the `stop_time` has no departure and no arrival time
+src/gtfs/read.rs	426	PANIC	the first stop time of the vj '<vehicle_journey_id>' has no departure/arrival, the stop_times.txt file is not valid	if the first `stop_time` of the `vehicle_journey` has a no departure and no arrival time
+src/gtfs/read.rs	436	PANIC	the last stop time of the vj '<vehicle_journey_id>' has no departure/arrival, the stop_times.txt file is not valid	if the last `stop_time` of the `vehicle_journey` has a no departure and no arrival time
+src/gtfs/read.rs	335	PANIC	Problem reading stop_times.txt: stop_id=<stop_time.stop_id> not found	if the  `stop_time` refers to a `stop_point` which doesn't exist
+src/read_utils.rs	138	PANIC		if file `frequencies.txt` can't be opened in the folder (`PathFileHandler`)
+src/read_utils.rs	187	PANIC		if file `frequencies.txt` can't be opened inside the ZIP archive (`ZipHandler`)
+src/gtfs/read.rs	938	INFO		[_Reading frequencies.txt_]
+src/gtfs/read.rs	941	INFO	Skipping frequencies.txt	if the file doesn't exist
+src/gtfs/read.rs	946	PANIC		if a line of `frequencies.txt` cannot be deserialized into a `Frequency` object
+src/gtfs/read.rs	954	WARN/IGNORE	frequency for trip <frequency.trip_id> has same start and end time	if the `frequency` start time and end time are the same
+src/gtfs/read.rs	964	WARN/IGNORE	frequency mapped to an unexisting trip <frequency.trip_id>	if the `frequency` refers to a `vehicle_journey` which doesn't exist
+src/gtfs/read.rs	975	WARN/IGNORE	frequency mapped to trip <frequency.trip_id> with no stop_times	if the `vehicle_journey` relative to the `frequency` doesn't have any `stop_time`
+src/gtfs/read.rs	996	PANIC		if the `vehicle_journey` relative to the `frequency` refers to a `calendar` which doesn't exist
+src/gtfs/read.rs	1051	PANIC	<id> already found	if at least 2 `vehicle_journey` have conflicting identifier (after `frequency` have been exploded into `stop_time`)
+src/model.rs	353	PANIC	<id> already found	if at least 2 `dataset` have conflicting identifier
+src/model.rs	391	PANIC	<id> already found	if at least 2 `line` have conflicting identifier
+src/model.rs	393	PANIC	<id> already found	if at least 2 `stop_point` have conflicting identifier
+src/model.rs	405	PANIC	<id> already found	if at least 2 `stop_area` have conflicting identifier
+src/model.rs	407	PANIC	<id> already found	if at least 2 `route` have conflicting identifier
+src/model.rs	410	PANIC	<id> already found	if at least 2 `vehicle_journey` have conflicting identifier
+src/model.rs	551	PANIC	Invalid id: transfer.from_stop_id=<transfer.from_stop_id>	if a `transfer` refers to an existing `stop_point`
+src/model.rs	551	PANIC	Invalid id: transfer.to_stop_id=<transfer.to_stop_id>	if a `transfer` refers to an existing `stop_point`
+relations/src/relations.rs	219	PANIC	id=<vehicle_journey.route_id> not found	if a `vehicle_journey` refers to a `route` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<vehicle_journey.physical_mode_id> not found	if a `vehicle_journey` refers to a `physical_mode` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<vehicle_journey.dataset_id> not found	if a `vehicle_journey` refers to a `dataset` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<line.network_id> not found	if a `line` refers to a `network` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<line.commercial_mode_id> not found	if a `line` refers to a `commercial_mode` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<route.line_id> not found	if a `route` refers to a `line` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<stop_point.stop_area_id> not found	if a `stop_point` refers to a `stop_area` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<dataset.contributor_id> not found	if a `dataset` refers to a `contributor` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<vehicle_journey.company_id> not found	if a `vehicle_journey` refers to a `company` which doesn't exist
+relations/src/relations.rs	219	PANIC	id=<vehicle_journey.service_id> not found	if a `vehicle_journey` refers to a `calendar` which doesn't exist

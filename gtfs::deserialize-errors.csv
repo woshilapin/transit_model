@@ -1,0 +1,61 @@
+object	field	log_type	description
+Calendar	service_id	PANIC	if value in `calendar.txt` is missing
+Calendar	monday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	tuesday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	wednesday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	thursday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	friday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	saturday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	sunday	PANIC	if value in `calendar.txt` is missing or is not a unsigned integer
+Calendar	start_date	PANIC	if value in `calendar.txt` is missing or is not in the format 'yyyymmdd'
+Calendar	end_date	PANIC	if value in `calendar.txt` is missing or is not in the format 'yyyymmdd'
+CalendarDate	service_id	PANIC	if value in `calendar_dates.txt` is missing
+CalendarDate	date	PANIC	if value in `calendar_dates.txt` is missing or is not in the format 'yyyymmdd'
+CalendarDate	exception_type	PANIC	if value in `calendar_dates.txt` is missing or is neither `1` (Add) nor `2` (Remove)
+`` (from the JSON input file to specify `dataset` and `contributor`)
+Config/Contributor	id	PANIC	if value in configuration JSON file is missing
+Config/Contributor	name	PANIC	if value in configuration JSON file is missing
+Config/ConfigDataSet	dataset_id	PANIC	if value in configuration JSON file is missing
+Stop	stop_id	PANIC	if value in `stops.txt` is missing; all `/` are removed
+Stop	stop_name	PANIC	if value in `stops.txt` is missing
+Stop	stop_desc	PANIC	if value in `stops.txt` is missing
+Stop	stop_lat	PANIC	if value in `stops.txt` is missing or is not a valid floating number
+Stop	stop_lon	PANIC	if value in `stops.txt` is missing or is not a valid floating number
+`Stop``location_type` if value in `stops.txt` is not one of `0`, `1`, `2`, `3` or `4`, then default is `0`
+`Stop``parent_station` all `/` are removed
+`Stop``wheelchair_boarding` if value in `stops.txt` is not one of `0`, `1` or `2`, then default is `0`
+Transfer	from_stop_id	PANIC	if value in `transfers.txt` is missing; all `/` are removed
+Transfer	to_stop_id	PANIC	if value in `transfers.txt` is missing; all `/` are removed
+`Transfer``transfer_type` if value in `transfers.txt` is not one of `0`, `1`, `2` or `3`, then default is `0`
+Transfer	min_transfer_time	PANIC	if value in `transfers.txt` is not an unsigned integer
+Shape	shape_id	PANIC	if value in `shapes.txt` is missing; all `/` are removed
+Shape	shape_pt_lat	PANIC	if value in `shapes.txt` is missing or is not a valid floating number
+Shape	shape_pt_lon	PANIC	if value in `shapes.txt` is missing or is not a valid floating number
+Shape	shape_pt_sequence	PANIC	if value in `shapes.txt` is missing or is not a valid unsigned integer
+Route	route_id	PANIC	if value in `routes.txt` is missing
+Route	route_short_name	PANIC	if value in `routes.txt` is missing
+Route	route_long_name	PANIC	if value in `routes.txt` is missing
+Route	route_type	PANIC	if value in `routes.txt` is missing
+Route	color	ERROR	if value in `routes.txt` is not in the format `XXXXXX` (where `X` is an hexadecimal value) [_String is not a valid Hexadecimal value_]; if value in `routes.txt` is not 6 characters long [_String is too long (6 characters expected)_]; if value in `routes.txt` is not 6 characters long [_String is too short (6 characters expected)_]; if error, default to no color (the field is optional)
+Route	text_color	ERROR	if value in `routes.txt` is not in the format `XXXXXX` (where `X` is an hexadecimal value) [_String is not a valid Hexadecimal value_]; if value in `routes.txt` is not 6 characters long [_String is too long (6 characters expected)_]; if value in `routes.txt` is not 6 characters long [_String is too short (6 characters expected)_]; if error, default to no color (the field is optional)
+Route	sort_order	PANIC	if value in `routes.txt` is missing or is not a valid unsigned number
+Trip	route_id	PANIC	if value in `trips.txt` is missing
+Trip	trip_id	PANIC	if value in `trips.txt` is missing
+`Trip``direction_id`  if value in `trips.txt` is not one of `0` or `1`, then default is `0`
+`Trip``shape_id` all `/` are removed
+`Trip``wheelchair_boarding` if value in `trips.txt` is not one of `0`, `1` or `2`, then default is `0`
+`Trip``bikes_allowed` if value in `trips.txt` is not one of `0`, `1` or `2`, then default is `0`
+StopTime	trip_id	PANIC	if value in `stop_times.txt` is missing
+StopTime	arrival_time	PANIC	if value in `stop_times.txt` is not in the format `HH:MM:SS`
+StopTime	departure_time	PANIC	if value in `stop_times.txt` is not in the format `HH:MM:SS`
+StopTime	stop_id	PANIC	if value in `stop_times.txt` is missing; all `/` are removed
+StopTime	stop_sequence	PANIC	if value in `stop_times.txt` is missing or is not a valid unsigned integer
+`StopTime``pickup_type` if value in `stop_times.txt` is not a valid unsigned integer, then default to `0`
+`StopTime``drop_off_type` if value in `stop_times.txt` is not a valid unsigned integer, then default to `0`
+StopTime	local_zone_id	PANIC	if value in `stop_times.txt` is not a valid unsigned integer
+`StopTime``timepoint` if value in `stop_times.txt` is not a valid unsigned integer, then default to `true`
+Frequency	trip_id	PANIC	if value in `frequencies.txt` is missing
+Frequency	start_time	PANIC	if value in `frequencies.txt` is missing or is not in the format `HH:MM:SS`
+Frequency	end_time	PANIC	if value in `frequencies.txt` is missing or is not in the format `HH:MM:SS`
+Frequency	headway_secs	PANIC	if value in `frequencies.txt` is missing or is not a valid unsigned integer
+`Frequency``exact_times` if value in `frequencies.txt` is not a valid unsigned integer, then default to `0`
