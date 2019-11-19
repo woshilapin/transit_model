@@ -314,6 +314,38 @@ where
         .collect()
 }
 
+type RoutingConstraintZone = Vec<Idx<StopPoint>>;
+fn parse_routing_constraint_zones<'a, I>(
+    rcz_elements: I,
+    map_schedule_stop_point_quay: &HashMap<String, String>,
+    collections: &Collections,
+) -> Vec<RoutingConstraintZone>
+where
+    I: Iterator<Item = &'a Element>,
+{
+    rcz_elements
+        .filter_map(|rcz_element| {
+            let mut stop_point_idxs = RoutingConstraintZone::new();
+            for scheduled_stop_point_ref_element in rcz_element
+                .only_child("members")
+                .iter()
+                .flat_map(|members| members.children())
+            {
+                if let Some(stop_point_idx) = scheduled_stop_point_ref_element
+                    .attribute::<String>("ref")
+                    .and_then(|ssp_ref| map_schedule_stop_point_quay.get(&ssp_ref))
+                    .and_then(|quay_ref| collections.stop_points.get_idx(&quay_ref))
+                {
+                    stop_point_idxs.push(stop_point_idx);
+                } else {
+                    return None;
+                }
+            }
+            Some(stop_point_idxs)
+        })
+        .collect()
+}
+
 fn parse_passenger_stop_assignment<'a, I>(psa_elements: I) -> HashMap<String, String>
 where
     I: Iterator<Item = &'a Element>,
@@ -717,6 +749,18 @@ fn parse_offer(
         .map(|childrens| childrens.filter(|e| e.name() == "DestinationDisplay"))
         .map(parse_destination_display)
         .unwrap_or_else(HashMap::new);
+    let routing_constraint_zones = structure_frame
+        .only_child("members")
+        .map(Element::children)
+        .map(|childrens| childrens.filter(|e| e.name() == "RoutingConstraintZone"))
+        .map(|rcz_elements| {
+            parse_routing_constraint_zones(
+                rcz_elements,
+                &map_schedule_stop_point_quay,
+                &collections,
+            )
+        })
+        .unwrap_or_else(Vec::new);
     let journey_patterns = structure_frame
         .only_child("members")
         .map(Element::children)
