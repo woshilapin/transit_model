@@ -76,6 +76,7 @@ struct StopPointInJourneyPattern {
     stop_point_idx: Idx<StopPoint>,
     pickup_type: u8,
     drop_off_type: u8,
+    local_zone_id: Option<u16>,
 }
 struct JourneyPattern<'a, 'b> {
     route: &'a Route,
@@ -251,6 +252,7 @@ where
             stop_point_idx,
             pickup_type,
             drop_off_type,
+            local_zone_id: None,
         })
     }
     sjp_elements
@@ -521,6 +523,7 @@ fn stop_times(
                 stop_point_idx,
                 pickup_type,
                 drop_off_type,
+                local_zone_id,
             } = *stop_point_in_journey_pattern;
             let times = arrival_departure_times(tpt)?;
             let stop_time = StopTime {
@@ -533,7 +536,7 @@ fn stop_times(
                 pickup_type,
                 drop_off_type,
                 datetime_estimated: false,
-                local_zone_id: None,
+                local_zone_id,
             };
 
             Ok(stop_time)
@@ -749,7 +752,7 @@ fn parse_offer(
         .map(|childrens| childrens.filter(|e| e.name() == "DestinationDisplay"))
         .map(parse_destination_display)
         .unwrap_or_else(HashMap::new);
-    let routing_constraint_zones = structure_frame
+    let _routing_constraint_zones = structure_frame
         .only_child("members")
         .map(Element::children)
         .map(|childrens| childrens.filter(|e| e.name() == "RoutingConstraintZone"))
@@ -1031,6 +1034,7 @@ mod tests {
                 stop_point_idx,
                 pickup_type: 0,
                 drop_off_type: 1,
+                local_zone_id: None,
             });
             if let Some(route) = routes.get("route_id") {
                 let journey_pattern = JourneyPattern {
