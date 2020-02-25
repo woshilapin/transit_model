@@ -317,12 +317,23 @@ impl<'a> OfferExporter<'a> {
     }
 
     fn export_timetabled_passing_time(stop_time: &'a StopTime) -> Element {
+        let arrival_day_offset = stop_time.arrival_time.hours() / 24;
+        let arrival_time = Time::new(
+            stop_time.arrival_time.hours() % 24,
+            stop_time.arrival_time.minutes(),
+            stop_time.arrival_time.seconds(),
+        );
+        let departure_day_offset = stop_time.departure_time.hours() / 24;
+        let departure_time = Time::new(
+            stop_time.departure_time.hours() % 24,
+            stop_time.departure_time.minutes(),
+            stop_time.departure_time.seconds(),
+        );
         Element::builder(ObjectType::TimetabledPassingTime.to_string())
-            .append(Self::generate_arrival_time(stop_time.arrival_time))
-            .append(Self::generate_departure_time(stop_time.departure_time))
-            .append(Self::generate_departure_day_offset(
-                stop_time.departure_time,
-            ))
+            .append(Self::generate_arrival_time(arrival_time))
+            .append(Self::generate_arrival_day_offset(arrival_day_offset))
+            .append(Self::generate_departure_time(departure_time))
+            .append(Self::generate_departure_day_offset(departure_day_offset))
             .build()
     }
 
@@ -474,10 +485,15 @@ impl<'a> OfferExporter<'a> {
             .build()
     }
 
-    fn generate_departure_day_offset(departure_time: Time) -> Element {
-        let offset = departure_time.hours() / 24;
+    fn generate_arrival_day_offset(arrival_day_offset: u32) -> Element {
+        Element::builder("ArrivalDayOffset")
+            .append(Node::Text(arrival_day_offset.to_string()))
+            .build()
+    }
+
+    fn generate_departure_day_offset(departure_day_offset: u32) -> Element {
         Element::builder("DepartureDayOffset")
-            .append(Node::Text(offset.to_string()))
+            .append(Node::Text(departure_day_offset.to_string()))
             .build()
     }
 
