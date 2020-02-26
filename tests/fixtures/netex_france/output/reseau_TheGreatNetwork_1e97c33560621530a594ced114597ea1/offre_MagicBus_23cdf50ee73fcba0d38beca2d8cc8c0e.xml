@@ -121,11 +121,13 @@
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>10:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>10:10:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>10:20:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>10:20:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
@@ -143,11 +145,13 @@
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>07:00:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>07:00:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>07:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>07:10:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>

@@ -197,21 +197,25 @@
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:00:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:00:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:10:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:20:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:20:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:40:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:40:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
@@ -229,21 +233,25 @@
 					<passingTimes>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:00:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:00:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:10:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:10:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:20:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:20:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
 						<TimetabledPassingTime>
 							<ArrivalTime>00:30:00</ArrivalTime>
+							<ArrivalDayOffset>0</ArrivalDayOffset>
 							<DepartureTime>00:30:00</DepartureTime>
 							<DepartureDayOffset>0</DepartureDayOffset>
 						</TimetabledPassingTime>
