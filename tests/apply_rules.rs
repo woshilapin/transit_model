@@ -223,3 +223,23 @@ fn test_ntw_consolidation_empty_grouped_from() {
         "./tests/fixtures/apply_rules/output_report/report_consolidation_empty_grouped_from.json",
     );
 }
+
+#[test]
+fn report_missing_geometry() {
+    use std::{
+        fs::File,
+        io::{BufWriter, Write},
+    };
+    fn write_property_rules_file<P: AsRef<Path>>(filepath: P) {
+        let property_rules_content = r#"object_type,object_id,property_name,property_old_value,property_value
+line,line_id,line_geometry,"LINESTRING(10.1 20.2,30.3 40.4)","LINESTRING(40.1 30.2,20.3 10.4)""#;
+        let property_rules_file = File::create(filepath).unwrap();
+        let mut writer = BufWriter::new(&property_rules_file);
+        write!(&mut writer, "{}", property_rules_content).unwrap();
+    }
+    test_in_tmp_dir(|path| {
+        let property_rules_filepath = path.join("property_rules.txt");
+        write_property_rules_file(&property_rules_filepath);
+        crate::apply_rules::property_rule::apply_rules
+    });
+}

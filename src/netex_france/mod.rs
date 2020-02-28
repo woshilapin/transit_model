@@ -28,6 +28,8 @@ mod networks;
 use networks::NetworkExporter;
 mod offer;
 use offer::OfferExporter;
+mod route_points;
+use route_points::build_stop_sequence;
 mod stops;
 use stops::StopExporter;
 mod transfers;

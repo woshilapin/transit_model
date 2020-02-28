@@ -14,15 +14,17 @@
 
 use crate::{
     netex_france::{
+        self,
         exporter::{Exporter, ObjectType},
         NetexMode, StopExporter,
     },
-    objects::{Coord, Line, Route, StopTime, Time, VehicleJourney},
+    objects::{Coord, Line, Route, StopPoint, StopTime, Time, VehicleJourney},
     Model, Result,
 };
 use log::warn;
 use minidom::{Element, Node};
 use proj::Proj;
+use std::collections::BTreeMap;
 use transit_model_collection::Idx;
 use transit_model_relations::IdxSet;
 
@@ -33,13 +35,36 @@ type JourneyPattern = VehicleJourney;
 pub struct OfferExporter<'a> {
     model: &'a Model,
     converter: Proj,
+    route_points: BTreeMap<&'a str, Vec<Idx<StopPoint>>>,
 }
 
 // Publicly exposed methods
 impl<'a> OfferExporter<'a> {
     pub fn new(model: &'a Model) -> Result<Self> {
         let converter = Exporter::get_coordinates_converter()?;
-        let exporter = OfferExporter { model, converter };
+        let route_points = model
+            .routes
+            .values()
+            .map(|route| {
+                // Unwrap is safe here since we are iterating on existing routes
+                let route_idx = model.routes.get_idx(&route.id).unwrap();
+                let vehicle_journeys_indexes: IdxSet<VehicleJourney> =
+                    model.get_corresponding_from_idx(route_idx);
+                (
+                    route.id.as_str(),
+                    netex_france::build_stop_sequence(
+                        vehicle_journeys_indexes
+                            .into_iter()
+                            .map(|idx| &model.vehicle_journeys[idx]),
+                    ),
+                )
+            })
+            .collect();
+        let exporter = OfferExporter {
+            model,
+            converter,
+            route_points,
+        };
         Ok(exporter)
     }
     pub fn export(&self, line_idx: Idx<Line>) -> Result<Vec<Element>> {
