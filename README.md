@@ -1,4 +1,5 @@
 # transit_model &emsp; ![Github Actions Status][github_actions]
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwoshilapin%2Ftransit_model.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwoshilapin%2Ftransit_model?ref=badge_shield)
 
 [github_actions]: https://github.com/CanalTP/transit_model/workflows/Continuous%20Integration/badge.svg
 
@@ -94,6 +95,9 @@ Default ones are provided by the command but you can pass a json file that conta
     }
 }
 ```
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fwoshilapin%2Ftransit_model.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fwoshilapin%2Ftransit_model?ref=badge_large)
 
 ## Tests
 
