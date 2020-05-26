@@ -1283,15 +1283,17 @@ where
                         ..corresponding_vj.clone()
                     };
                     new_vehicle_journeys.push(generated_vj);
+                    let is_tad = |stop_time: &&objects::StopTime| {
+                        stop_time.pickup_type == 2 || stop_time.drop_off_type == 2
+                    };
                     let stop_time_ids: HashMap<(String, u32), String> = corresponding_vj
                         .stop_times
                         .iter()
+                        .filter(|stop_time| is_tad(stop_time))
                         .filter(|stop_time| {
-                            (stop_time.pickup_type == 2 || stop_time.drop_off_type == 2)
-                                && collections
-                                    .stop_time_comments
-                                    .get(&(frequency.trip_id.clone(), stop_time.sequence))
-                                    .is_some()
+                            collections
+                                .stop_time_comments
+                                .contains_key(&(frequency.trip_id.clone(), stop_time.sequence))
                         })
                         .map(|stop_time| {
                             (
@@ -1304,20 +1306,17 @@ where
                     let stop_time_comments: HashMap<(String, u32), String> = corresponding_vj
                         .stop_times
                         .iter()
-                        .filter(|stop_time| {
-                            stop_time.pickup_type == 2 || stop_time.drop_off_type == 2
-                        })
+                        .filter(|stop_time| is_tad(stop_time))
                         .filter_map(|stop_time| {
-                            match collections
+                            collections
                                 .stop_time_comments
                                 .get(&(frequency.trip_id.clone(), stop_time.sequence))
-                            {
-                                Some(comment_id) => Some((
-                                    (generated_trip_id.clone(), stop_time.sequence),
-                                    comment_id.to_string(),
-                                )),
-                                _ => None,
-                            }
+                                .map(|comment_id| {
+                                    (
+                                        (generated_trip_id.clone(), stop_time.sequence),
+                                        comment_id.to_string(),
+                                    )
+                                })
                         })
                         .collect();
                     collections.stop_time_comments.extend(stop_time_comments);
