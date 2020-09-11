@@ -110,8 +110,9 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: tarpaulin
-        args: --all-features --all-targets --workspace --count --out Xml --run-types AllTargets
+        args: --all-features --workspace --count --out Lcov --run-types AllTargets
     - name: Codecov upload
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+        file: lcov.info
