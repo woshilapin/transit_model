@@ -64,15 +64,17 @@ fn generate_transfers_from_sp(
         }
         let approx = sp1.coord.approx();
         for (idx2, sp2) in model.stop_points.iter() {
-            if sp2.coord == Coord::default() {
-                warn!("Stop Point {} geolocation is (0, 0), no transfer to this StopPoint will be generated.", sp2.id);
-                continue;
-            }
             if transfers_map.contains_key(&(idx1, idx2)) {
                 continue;
             }
             if let Some(ref f) = need_transfer {
                 if !f(model, idx1, idx2) {
+                    continue;
+                }
+            } else {
+                // Default rule when `need_transfer` is not defined
+                if sp2.coord == Coord::default() {
+                    warn!("Stop Point {} geolocation is (0, 0), no transfer to this StopPoint will be generated.", sp2.id);
                     continue;
                 }
             }
